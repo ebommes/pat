@@ -8,14 +8,14 @@ use arrow::record_batch::RecordBatch;
 use arrow::util::pretty::print_batches;
 use clap::Parser;
 use futures::StreamExt;
+use object_store::ObjectStore;
 use object_store::aws::AmazonS3Builder;
 use object_store::azure::MicrosoftAzureBuilder;
 use object_store::gcp::GoogleCloudStorageBuilder;
 use object_store::path::Path as ObjectPath;
-use object_store::ObjectStore;
+use parquet::arrow::ParquetRecordBatchStreamBuilder;
 use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
 use parquet::arrow::async_reader::ParquetObjectReader;
-use parquet::arrow::ParquetRecordBatchStreamBuilder;
 use url::Url;
 
 #[derive(Parser)]
@@ -170,9 +170,7 @@ fn run() -> Result<()> {
     for (i, loc) in locations.iter().enumerate() {
         let batches = match loc {
             InputLocation::Local(path) => runtime.block_on(read_batches(path, limit))?,
-            InputLocation::Remote(url) => {
-                runtime.block_on(read_batches_remote(url, limit))?
-            }
+            InputLocation::Remote(url) => runtime.block_on(read_batches_remote(url, limit))?,
         };
 
         if cli.json {
@@ -302,11 +300,8 @@ mod tests {
     fn make_test_parquet(num_rows: usize) -> NamedTempFile {
         let schema = Arc::new(Schema::new(vec![Field::new("x", DataType::Int32, false)]));
         let values: Vec<i32> = (0..num_rows as i32).collect();
-        let batch = RecordBatch::try_new(
-            schema.clone(),
-            vec![Arc::new(Int32Array::from(values))],
-        )
-        .unwrap();
+        let batch =
+            RecordBatch::try_new(schema.clone(), vec![Arc::new(Int32Array::from(values))]).unwrap();
 
         let tmp = NamedTempFile::new().unwrap();
         let mut writer = ArrowWriter::try_new(tmp.reopen().unwrap(), schema, None).unwrap();

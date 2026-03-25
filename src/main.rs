@@ -15,18 +15,9 @@ struct Cli {
     #[arg(required = true)]
     files: Vec<PathBuf>,
 
-    /// Number of rows to display
-    #[arg(
-        short = 'n',
-        long = "lines",
-        default_value = "10",
-        conflicts_with = "all"
-    )]
-    lines: usize,
-
-    /// Display all rows
-    #[arg(short, long)]
-    all: bool,
+    /// Limit output to first N rows
+    #[arg(short = 'n', long = "lines")]
+    lines: Option<usize>,
 
     /// Output as NDJSON (one JSON object per line, jq-compatible)
     #[arg(short, long, conflicts_with = "pretty")]
@@ -97,7 +88,7 @@ fn write_pretty(batches: &[RecordBatch]) -> Result<()> {
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-    let limit = if cli.all { None } else { Some(cli.lines) };
+    let limit = cli.lines;
 
     for path in &cli.files {
         let batches = read_batches(path, limit)?;

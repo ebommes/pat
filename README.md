@@ -69,6 +69,24 @@ pat -n 20 data.parquet
 | `--json` | `-j` | Output as NDJSON (jq-compatible) |
 | `--lines N` | `-n N` | Limit output to first N rows |
 
+### Cloud storage
+
+`pat` can read directly from S3, GCS, and Azure Blob Storage.
+
+```sh
+pat s3://my-bucket/data.parquet
+pat gs://my-bucket/data.parquet
+pat az://my-container/data.parquet
+```
+
+Authentication uses standard environment variables and instance roles:
+
+| Provider | Environment variables |
+| -------- | --------------------- |
+| AWS S3 | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION` |
+| Google Cloud Storage | `GOOGLE_SERVICE_ACCOUNT` or `GOOGLE_APPLICATION_CREDENTIALS` (Workload Identity also supported) |
+| Azure Blob Storage | `AZURE_STORAGE_ACCOUNT_NAME`, `AZURE_STORAGE_ACCESS_KEY` |
+
 ### Multiple files
 
 ```sh
